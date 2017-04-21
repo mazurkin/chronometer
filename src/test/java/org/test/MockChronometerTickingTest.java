@@ -14,7 +14,7 @@ public class MockChronometerTickingTest {
 
     @Before
     public void setUp() throws Exception {
-        chronometer = new MockChronometer();
+        chronometer = new MockChronometer(MockChronometer.Mode.TICKING);
 
         // TICKING must be default mode for mock chronometer
         Assert.assertEquals(MockChronometer.Mode.TICKING, chronometer.getMode());
@@ -64,5 +64,20 @@ public class MockChronometerTickingTest {
         Assert.assertTrue(time2 - time1 >= 10);
         Assert.assertTrue(tick2 - tick1 >= 10_000_000);
         Assert.assertTrue(Duration.between(instant1, instant2).toNanos() >= 10_000_000);
+    }
+
+    @Test
+    public void testFactories() throws Exception {
+        MockChronometer c1 = MockChronometer.createTicking();
+        Assert.assertNotNull(c1);
+        Assert.assertEquals(MockChronometer.Mode.TICKING, c1.getMode());
+
+        MockChronometer c2 = MockChronometer.createTicking(System.currentTimeMillis(), System.nanoTime());
+        Assert.assertNotNull(c2);
+        Assert.assertEquals(MockChronometer.Mode.TICKING, c2.getMode());
+
+        MockChronometer c3 = MockChronometer.createTicking("2017-04-21 14:22:12.000 Europe/Moscow", System.nanoTime());
+        Assert.assertNotNull(c3);
+        Assert.assertEquals(MockChronometer.Mode.TICKING, c3.getMode());
     }
 }

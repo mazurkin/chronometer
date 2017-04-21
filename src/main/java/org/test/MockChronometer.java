@@ -36,18 +36,7 @@ public class MockChronometer implements Chronometer {
     private volatile Mode mode;
 
     /**
-     * Constructs mock chronometer with predefined clock values
-     * @param mode Chronometer mode
-     * @param epochTimeMs Value of <em>wall clock</em> time in milliseconds since <em>epoch</em>
-     * @param tickNs Value of <em>tick</em> time in nanoseconds 
-     */
-    public MockChronometer(Mode mode, long epochTimeMs, long tickNs) {
-        this.stateRef = new AtomicReference<>(State.of(epochTimeMs, 0, tickNs));
-        this.mode = mode;
-    }
-
-    /**
-     * Constructs mock chronometer with current real time state
+     * Constructs mock chronometer with current wall clock time state
      * @param mode Chronometer mode
      */
     public MockChronometer(Mode mode) {
@@ -56,18 +45,128 @@ public class MockChronometer implements Chronometer {
     }
 
     /**
-     * Constructs mock chronometer with current real time state
+     * Creates mock chronometer instance in <em>system</em> mode
+     * @return Mock chronometer
      */
-    public MockChronometer() {
-        this.stateRef = new AtomicReference<>(State.now());
-        this.mode = Mode.TICKING;
+    public static MockChronometer createSystem() {
+        return new MockChronometer(Mode.SYSTEM);
+    }
+
+    /**
+     * Creates mock chronometer instance in <em>ticking</em> mode
+     * @return Mock chronometer
+     */
+    public static MockChronometer createTicking() {
+        return new MockChronometer(Mode.TICKING);
+    }
+
+    /**
+     * Creates mock chronometer instance in <em>ticking</em> mode
+     * @param epochTimeMs Epoch time in milliseconds
+     * @param tickNs Ticks
+     * @return Mock chronometer
+     */
+    public static MockChronometer createTicking(long epochTimeMs, long tickNs) {
+        return new MockChronometer(Mode.TICKING).reset(epochTimeMs, 0, tickNs);
+    }
+
+    /**
+     * Creates mock chronometer instance in <em>ticking</em> mode
+     * @param moment Time
+     * @param tickNs Ticks
+     * @return Mock chronometer
+     */
+    public static MockChronometer createTicking(String moment, long tickNs) {
+        return new MockChronometer(Mode.TICKING).reset(moment, tickNs);
+    }
+
+    /**
+     * Creates mock chronometer instance in <em>frozen</em> mode
+     * @return Mock chronometer
+     */
+    public static MockChronometer createFrozen() {
+        return new MockChronometer(Mode.FROZEN);
+    }
+
+    /**
+     * Creates mock chronometer instance in <em>frozen</em> mode
+     * @param epochTimeMs Epoch time in milliseconds
+     * @param tickNs Ticks
+     * @return Mock chronometer
+     */
+    public static MockChronometer createFrozen(long epochTimeMs, long tickNs) {
+        return new MockChronometer(Mode.FROZEN).reset(epochTimeMs, 0, tickNs);
+    }
+
+    /**
+     * Creates mock chronometer instance in <em>frozen</em> mode
+     * @param moment Time
+     * @param tickNs Ticks
+     * @return Mock chronometer
+     */
+    public static MockChronometer createFrozen(String moment, long tickNs) {
+        return new MockChronometer(Mode.FROZEN).reset(moment, tickNs);
+    }
+
+    /**
+     * Convert string representation of time to epoch millis
+     * @param moment Time
+     * @return Epoch time in milliseconds
+     * @see MockChronometer#TIMESTAMP_FORMAT
+     */
+    public static long toEpochMillis(String moment) {
+        ZonedDateTime t = ZonedDateTime.parse(moment, TIMESTAMP_FORMATTER);
+        return t.toInstant().toEpochMilli();
     }
 
     /**
      * Set the state from system time sources
      */
-    public void reset() {
-        this.stateRef.set(State.now());
+    public MockChronometer reset() {
+        switch (mode) {
+            case FROZEN:
+            case TICKING:
+                this.stateRef.set(State.now());
+                return this;
+            case SYSTEM:
+                // do nothing as a chronometer in system mode always provide the current time
+                return this;
+            default:
+                throw new IllegalStateException("Mode doesn't support state parameters: " + mode);
+        }
+    }
+
+    /**
+     * Set the state from parameters
+     * @param epochTimeMs Epoch time in milliseconds
+     * @param adjustmentNs Nanoseconds adjustment for time
+     * @param tickNs Ticks
+     */
+    public MockChronometer reset(long epochTimeMs, long adjustmentNs, long tickNs) {
+        switch (mode) {
+            case FROZEN:
+            case TICKING:
+                this.stateRef.set(State.of(epochTimeMs, adjustmentNs, tickNs));
+                return this;
+            default:
+                throw new IllegalStateException("Mode doesn't support state parameters: " + mode);
+        }
+    }
+
+    /**
+     * Set the state from parameters
+     * @param moment Time
+     * @param tickNs Ticks
+     */
+    public MockChronometer reset(String moment, long tickNs) {
+        switch (mode) {
+            case FROZEN:
+            case TICKING:
+                this.stateRef.set(State.of(toEpochMillis(moment), 0, tickNs));
+                return this;
+            default:
+                throw new IllegalStateException("Mode doesn't support state parameters: " + mode);
+        }
     }
 
     /**
@@ -138,7 +237,7 @@ public class MockChronometer implements Chronometer {
      * @param deltaMs Shift value in milliseconds
      * @param deltaNs Additional shift delta value in nanoseconds
      */
-    public void shiftBy(long deltaMs, long deltaNs) {
+    public MockChronometer shiftBy(long deltaMs, long deltaNs) {
         while (true) {
             State curState = stateRef.get();
 
@@ -158,14 +257,16 @@ public class MockChronometer implements Chronometer {
                 break;
             }
         }
+
+        return this;
     }
 
     /**
      * Shifts both <em>tick</em> and <em>wall clock</em> times by specified value
      * @param deltaMs Shift delta value in milliseconds
      */
-    public void shiftBy(long deltaMs) {
-        shiftBy(deltaMs, 0);
+    public MockChronometer shiftBy(long deltaMs) {
+        return shiftBy(deltaMs, 0);
     }
 
     /**
@@ -173,11 +274,11 @@ public class MockChronometer implements Chronometer {
      * @param delta Shift delta value
      * @param deltaUnit Shift delta value time unit
      */
-    public void shiftBy(long delta, TimeUnit deltaUnit) {
+    public MockChronometer shiftBy(long delta, TimeUnit deltaUnit) {
         if (deltaUnit.compareTo(TimeUnit.MILLISECONDS) < 0) {
-            shiftBy(0, deltaUnit.toNanos(delta));
+            return shiftBy(0, deltaUnit.toNanos(delta));
         } else {
-            shiftBy(deltaUnit.toMillis(delta), 0);
+            return shiftBy(deltaUnit.toMillis(delta), 0);
         }
     }
 
@@ -187,7 +288,7 @@ public class MockChronometer implements Chronometer {
      * @param adjustmentNs Additional nanosecond part
      * @see System#currentTimeMillis()
      */
-    public void shiftTo(long epochTimeMs, long adjustmentNs) {
+    public MockChronometer shiftTo(long epochTimeMs, long adjustmentNs) {
         while (true) {
             State curState = stateRef.get();
 
@@ -205,6 +306,8 @@ public class MockChronometer implements Chronometer {
                 break;
             }
         }
+
+        return this;
     }
 
     /**
@@ -212,57 +315,56 @@ public class MockChronometer implements Chronometer {
      * @param epochTimeMs Wall clock time value in millisecond since <em>epoch</em>
      * @see System#currentTimeMillis()
      */
-    public void shiftTo(long epochTimeMs) {
-        shiftTo(epochTimeMs, 0);
+    public MockChronometer shiftTo(long epochTimeMs) {
+        return shiftTo(epochTimeMs, 0);
     }
 
     /**
      * Shifts both <em>tick</em> and <em>wall clock</em> times to the specified time moment
      * @param moment Wall clock time as {@link Date} instance
      */
-    public void shiftTo(Date moment) {
-        shiftTo(moment.getTime());
+    public MockChronometer shiftTo(Date moment) {
+        return shiftTo(moment.getTime());
     }
 
     /**
      * Shifts both <em>tick</em> and <em>wall clock</em> times to the specified time moment
      * @param moment Wall clock time as {@link Instant} instance
      */
-    public void shiftTo(Instant moment) {
-        shiftTo(moment.toEpochMilli(), moment.get(ChronoField.NANO_OF_SECOND) % NS_IN_MS);
+    public MockChronometer shiftTo(Instant moment) {
+        return shiftTo(moment.toEpochMilli(), moment.get(ChronoField.NANO_OF_SECOND) % NS_IN_MS);
     }
 
     /**
      * Shifts both <em>tick</em> and <em>wall clock</em> times to the specified time moment
      * @param moment Wall clock time as {@link Timestamp} instance
      */
-    public void shiftTo(Timestamp moment) {
-        shiftTo(moment.toInstant());
+    public MockChronometer shiftTo(Timestamp moment) {
+        return shiftTo(moment.toInstant());
     }
 
     /**
      * Shifts both <em>tick</em> and <em>wall clock</em> times to the specified time moment
      * @param moment Wall clock time as {@link ZonedDateTime} instance
      */
-    public void shiftTo(ZonedDateTime moment) {
-        shiftTo(moment.toInstant());
+    public MockChronometer shiftTo(ZonedDateTime moment) {
+        return shiftTo(moment.toInstant());
     }
 
     /**
      * Shifts both <em>tick</em> and <em>wall clock</em> times to the specified time moment
      * @param moment Wall clock time as {@link OffsetDateTime} instance
      */
-    public void shiftTo(OffsetDateTime moment) {
-        shiftTo(moment.toInstant());
+    public MockChronometer shiftTo(OffsetDateTime moment) {
+        return shiftTo(moment.toInstant());
     }
 
     /**
      * Shifts both <em>tick</em> and <em>wall clock</em> times to the specified time moment
      * @param moment Wall clock time in 'uuuu-MM-dd HH:mm:ss.SSS z' format
      */
-    public void shiftTo(String moment) {
-        ZonedDateTime t = ZonedDateTime.parse(moment, TIMESTAMP_FORMATTER);
-        shiftTo(t);
+    public MockChronometer shiftTo(String moment) {
+        return shiftTo(toEpochMillis(moment));
     }
 
     /**
@@ -270,7 +372,7 @@ public class MockChronometer implements Chronometer {
      * @param deltaMs Shift delta value in milliseconds
      * @param deltaNs Shift delta value in nanoseconds
      */
-    public void correctBy(long deltaMs, long deltaNs) {
+    public MockChronometer correctTimeBy(long deltaMs, long deltaNs) {
         while (true) {
             State curState = stateRef.get();
 
@@ -290,6 +392,8 @@ public class MockChronometer implements Chronometer {
                 break;
             }
         }
+
+        return this;
     }
 
     /**
@@ -298,7 +402,7 @@ public class MockChronometer implements Chronometer {
      * @param adjustmentNs Additional nanosecond part
      * @see System#currentTimeMillis()
      */
-    public void correctTo(long epochTimeMs, long adjustmentNs) {
+    public MockChronometer correctTimeTo(long epochTimeMs, long adjustmentNs) {
         while (true) {
             State curState = stateRef.get();
 
@@ -318,6 +422,8 @@ public class MockChronometer implements Chronometer {
                 break;
             }
         }
+
+        return this;
     }
 
     /**

@@ -21,8 +21,7 @@ public class MockChronometerFrozenTest {
 
     @Before
     public void setUp() throws Exception {
-        chronometer = new MockChronometer();
-        chronometer.setMode(MockChronometer.Mode.FROZEN);
+        chronometer = new MockChronometer(MockChronometer.Mode.FROZEN);
     }
 
     @Test(expected = DateTimeParseException.class)
@@ -95,7 +94,7 @@ public class MockChronometerFrozenTest {
         long time1 = chronometer.getTimeMs();
         long tick1 = chronometer.getTickNs();
 
-        chronometer.correctBy(100, 400);
+        chronometer.correctTimeBy(100, 400);
         long time2 = chronometer.getTimeMs();
         long tick2 = chronometer.getTickNs();
 
@@ -109,7 +108,7 @@ public class MockChronometerFrozenTest {
         long time1 = chronometer.getTimeMs();
         long tick1 = chronometer.getTickNs();
 
-        chronometer.correctTo(time1 + 100, 400);
+        chronometer.correctTimeTo(time1 + 100, 400);
         long time2 = chronometer.getTimeMs();
         long tick2 = chronometer.getTickNs();
 
@@ -120,7 +119,7 @@ public class MockChronometerFrozenTest {
     @Test
     public void testElapsedOverflow1() throws Exception {
         // tick goes through Long.MAX_VALUE and Long.MIN_VALUE
-        MockChronometer chronometer = new MockChronometer(MockChronometer.Mode.FROZEN,
+        MockChronometer chronometer = MockChronometer.createFrozen(
                 System.currentTimeMillis(), Long.MAX_VALUE - 1_000_000);
 
         long tickNs = chronometer.getTickNs();
@@ -146,7 +145,7 @@ public class MockChronometerFrozenTest {
         long posNs = negNs + Long.MAX_VALUE + 5_000_000;
 
         // difference is more than Long.MAX_VALUE
-        MockChronometer chronometer = new MockChronometer(MockChronometer.Mode.FROZEN,
+        MockChronometer chronometer = MockChronometer.createFrozen(
                 System.currentTimeMillis(), negNs);
 
         long tickNs = chronometer.getTickNs();
@@ -167,5 +166,19 @@ public class MockChronometerFrozenTest {
         Assert.assertEquals((posMs - negMs) + rstMs, elapsedMs);
     }
 
+    @Test
+    public void testFactories() throws Exception {
+        MockChronometer c1 = MockChronometer.createFrozen();
+        Assert.assertNotNull(c1);
+        Assert.assertEquals(MockChronometer.Mode.FROZEN, c1.getMode());
+
+        MockChronometer c2 = MockChronometer.createFrozen(System.currentTimeMillis(), System.nanoTime());
+        Assert.assertNotNull(c2);
+        Assert.assertEquals(MockChronometer.Mode.FROZEN, c2.getMode());
+
+        MockChronometer c3 = MockChronometer.createFrozen("2017-04-21 14:22:12.000 Europe/Moscow", System.nanoTime());
+        Assert.assertNotNull(c3);
+        Assert.assertEquals(MockChronometer.Mode.FROZEN, c3.getMode());
+    }
 }
 

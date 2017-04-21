@@ -13,8 +13,7 @@ public class MockChronometerSystemTest {
 
     @Before
     public void setUp() throws Exception {
-        chronometer = new MockChronometer();
-        chronometer.setMode(MockChronometer.Mode.SYSTEM);
+        chronometer = new MockChronometer(MockChronometer.Mode.SYSTEM);
     }
 
     @Test
@@ -46,11 +45,18 @@ public class MockChronometerSystemTest {
 
     @Test(expected = IllegalStateException.class)
     public void testNoCorrectTo() throws Exception {
-        chronometer.correctTo(System.currentTimeMillis(), 0);
+        chronometer.correctTimeTo(System.currentTimeMillis(), 0);
     }
 
     @Test(expected = IllegalStateException.class)
     public void testNoCorrectBy() throws Exception {
-        chronometer.correctBy(10, 0);
+        chronometer.correctTimeBy(10, 0);
+    }
+
+    @Test
+    public void testFactories() throws Exception {
+        MockChronometer c = MockChronometer.createSystem();
+        Assert.assertNotNull(c);
+        Assert.assertEquals(MockChronometer.Mode.SYSTEM, c.getMode());
     }
 }
