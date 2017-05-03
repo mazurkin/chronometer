@@ -32,7 +32,7 @@ In test:
 ```java
 public class Test {
     
-    private MochChronometer chronometer;
+    private MockChronometer chronometer;
     
     private TimeDependent d;
     
