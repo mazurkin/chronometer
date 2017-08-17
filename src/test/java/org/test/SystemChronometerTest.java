@@ -45,4 +45,20 @@ public class SystemChronometerTest {
         LocalDate v = chronometer.getLocalDate(ZoneId.of("America/New_York"));
         Assert.assertNotNull(v);
     }
+
+    @Test
+    public void testSleep1() throws Exception {
+        long m = chronometer.getTickNs();
+        chronometer.sleep(500);
+        long elapsedMs = chronometer.getElapsed(m, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(Math.abs(elapsedMs - 500) < 20);
+    }
+
+    @Test
+    public void testSleep2() throws Exception {
+        long m = chronometer.getTickNs();
+        chronometer.sleep(500_000_100, TimeUnit.NANOSECONDS);
+        long elapsedMs = chronometer.getElapsed(m, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(Math.abs(elapsedMs - 500) < 20);
+    }
 }

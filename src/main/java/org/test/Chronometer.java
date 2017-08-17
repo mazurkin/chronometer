@@ -194,4 +194,19 @@ public interface Chronometer {
         }
     }
 
+    /**
+     * Pause current thread on specified time
+     * @param pauseMs Pause duration in milliseconds
+     * @throws InterruptedException Thrown if the thread is interrupted
+     */
+    void sleep(long pauseMs) throws InterruptedException;
+
+    /**
+     * Pause current thread on specified time
+     * @param pause Pause duration
+     * @param pauseUnit Time unit for time duration
+     * @throws InterruptedException Thrown if the thread is interrupted
+     */
+    void sleep(long pause, TimeUnit pauseUnit) throws InterruptedException;
+
 }

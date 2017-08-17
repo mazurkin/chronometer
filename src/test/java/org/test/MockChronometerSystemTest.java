@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 
 public class MockChronometerSystemTest {
 
@@ -58,5 +59,21 @@ public class MockChronometerSystemTest {
         MockChronometer c = MockChronometer.createSystem();
         Assert.assertNotNull(c);
         Assert.assertEquals(MockChronometer.Mode.SYSTEM, c.getMode());
+    }
+
+    @Test
+    public void testSleep1() throws Exception {
+        long m = chronometer.getTickNs();
+        chronometer.sleep(500);
+        long elapsedMs = chronometer.getElapsed(m, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(Math.abs(elapsedMs - 500) < 20);
+    }
+
+    @Test
+    public void testSleep2() throws Exception {
+        long m = chronometer.getTickNs();
+        chronometer.sleep(500_000_100, TimeUnit.NANOSECONDS);
+        long elapsedMs = chronometer.getElapsed(m, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(Math.abs(elapsedMs - 500) < 20);
     }
 }

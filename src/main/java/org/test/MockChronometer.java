@@ -129,7 +129,7 @@ public class MockChronometer implements Chronometer {
                 this.stateRef.set(State.now());
                 return this;
             case SYSTEM:
-                // do nothing as a chronometer in system mode always provide the current time
+                // do nothing as a chronometer in system mode always provides the current time
                 return this;
             default:
                 throw new IllegalStateException("Mode doesn't support state parameters: " + mode);
@@ -229,6 +229,30 @@ public class MockChronometer implements Chronometer {
                 return SystemChronometer.INSTANCE.getInstant();
             default:
                 throw new IllegalStateException("Unsupported mode: " + mode);
+        }
+    }
+
+    @Override
+    public void sleep(long pauseMs) throws InterruptedException {
+        switch (mode) {
+            case FROZEN:
+            case TICKING:
+                shiftBy(pauseMs);
+                break;
+            default:
+                SystemChronometer.INSTANCE.sleep(pauseMs);
+        }
+    }
+
+    @Override
+    public void sleep(long pause, TimeUnit pauseUnit) throws InterruptedException {
+        switch (mode) {
+            case FROZEN:
+            case TICKING:
+                shiftBy(pause, pauseUnit);
+                break;
+            default:
+                SystemChronometer.INSTANCE.sleep(pause, pauseUnit);
         }
     }
 

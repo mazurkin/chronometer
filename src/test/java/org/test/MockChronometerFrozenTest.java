@@ -180,5 +180,21 @@ public class MockChronometerFrozenTest {
         Assert.assertNotNull(c3);
         Assert.assertEquals(MockChronometer.Mode.FROZEN, c3.getMode());
     }
+
+    @Test
+    public void testSleep1() throws Exception {
+        long m = chronometer.getTickNs();
+        chronometer.sleep(500);
+        long elapsedMs = chronometer.getElapsed(m, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(Math.abs(elapsedMs - 500) < 20);
+    }
+
+    @Test
+    public void testSleep2() throws Exception {
+        long m = chronometer.getTickNs();
+        chronometer.sleep(500_000_100, TimeUnit.NANOSECONDS);
+        long elapsedMs = chronometer.getElapsed(m, TimeUnit.MILLISECONDS);
+        Assert.assertTrue(Math.abs(elapsedMs - 500) < 20);
+    }
 }
 
