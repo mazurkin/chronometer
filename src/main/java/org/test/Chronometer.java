@@ -31,17 +31,23 @@ import java.util.concurrent.TimeUnit;
  */
 public interface Chronometer {
 
+    long ALLOWED_TICK_JITTER_NS = 1_000_000;
+
     /**
      * Returns current <em>tick</em> time in nanoseconds. Doesn't depend on what <em>wall</em> clock time is it now. Doesn't depends
      * on NTP shifts. Almost monotonic. Mostly used for timers and duration measurements.
+     *
      * @return Tick time in nanoseconds
+     *
      * @see <a href="http://stas-blogspot.blogspot.ru/2012/02/what-is-behind-systemnanotime.html">System.nanotTime() in details</a>
      */
     long getTickNs();
 
     /**
      * Returns <em>wall clock</em> time in milliseconds since <em>epoch</em> (midnight, January 1, 1970 UTC)
+     *
      * @return Milliseconds between the current time and <em>epoch</em> moment
+     * 
      * @see <a href="http://infiniteundo.com/post/25326999628/falsehoods-programmers-believe-about-time">Facts about time #1</a>
      * @see <a href="http://infiniteundo.com/post/25509354022/more-falsehoods-programmers-believe-about-time">Facts about time #2</a>
      */
@@ -49,6 +55,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link Date}
+     *
      * @return Current time
      */
     default Date getDate() {
@@ -57,6 +64,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link Calendar}
+     *
      * @return Current time
      */
     default Calendar getCalendar() {
@@ -67,6 +75,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link Calendar}
+     *
      * @param timezone Timezone for calendar
      * @return Current time
      */
@@ -78,6 +87,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link Calendar}
+     *
      * @param timezone Timezone for calendar
      * @param locale Locale for calendar
      * @return Current time
@@ -90,12 +100,14 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link Instant}
+     *
      * @return Current time
      */
     Instant getInstant();
 
     /**
      * Current <em>wall clock</em> as {@link Timestamp}
+     *
      * @return Current time
      */
     default Timestamp getTimestamp() {
@@ -104,6 +116,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link ZonedDateTime}
+     *
      * @param zoneId Timezone for time container
      * @return Current time
      */
@@ -113,6 +126,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link OffsetDateTime}
+     *
      * @param zoneId Timezone for time container
      * @return Current time
      */
@@ -122,6 +136,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link LocalDateTime}
+     *
      * @param zoneId Timezone for time container
      * @return Current time
      */
@@ -131,6 +146,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link LocalTime}
+     *
      * @param zoneId Timezone for time container
      * @return Current time
      */
@@ -140,6 +156,7 @@ public interface Chronometer {
 
     /**
      * Current <em>wall clock</em> as {@link LocalDate}
+     *
      * @param zoneId Timezone for time container
      * @return Current time
      */
@@ -149,8 +166,10 @@ public interface Chronometer {
 
     /**
      * Calculates elapsed time in nanoseconds
+     *
      * @param tickNs Value returned by {@link Chronometer#getTickNs()} call at the start of measured operation
      * @return Elapsed time, nanoseconds
+     *
      * @see Chronometer#getTickNs()
      */
     default long getElapsedNs(long tickNs) {
@@ -158,34 +177,52 @@ public interface Chronometer {
 
         if (elapsedNs >= 0) {
             return elapsedNs;
-        } else if (elapsedNs >= -1_000_000) {
+        } else if (elapsedNs >= -ALLOWED_TICK_JITTER_NS) {
             // System.nanoTime() could be different on CPU cores on Linux - so we allow some jitter (1ms back)
             return 0;
         } else {
+            // large negative value - overflow
             return Long.MAX_VALUE;
         }
     }
 
     /**
      * Calculates elapsed time in specified time unit
+     *
      * @param tickNs Value returned by {@link Chronometer#getTickNs()} call at the start of measured operation
      * @param timeUnit Time unit for result
      * @return Elapsed time in selected time unit
+     *
      * @see Chronometer#getTickNs()
      */
     default long getElapsed(long tickNs, TimeUnit timeUnit) {
-        long elapsedNs = getTickNs() - tickNs;
+        return getElapsed(tickNs, getTickNs(), timeUnit);
+    }
+
+    /**
+     * Calculates difference between two timestamps in specified time unit
+     *
+     * @param tickNs1 The first value returned by {@link Chronometer#getTickNs()} call at the start of measured operation
+     * @param tickNs2 The second value returned by {@link Chronometer#getTickNs()} call at the start of measured operation
+     * @param timeUnit Time unit for result
+     * @return Elapsed time in selected time unit
+     *
+     * @see Chronometer#getTickNs()
+     */
+    default long getElapsed(long tickNs1, long tickNs2, TimeUnit timeUnit) {
+        long elapsedNs = tickNs2 - tickNs1;
 
         if (elapsedNs >= 0) {
             return timeUnit.convert(elapsedNs, TimeUnit.NANOSECONDS);
-        } else if (elapsedNs >= -1_000_000) {
+        } else if (elapsedNs >= -ALLOWED_TICK_JITTER_NS) {
             // System.nanoTime() could be different on CPU cores on Linux - so we allow some jitter (1ms back)
             return 0;
         } else {
+            // large negative value - overflow
             if (timeUnit.compareTo(TimeUnit.NANOSECONDS) > 0) {
                 // handle long type overflow for higher time units
                 long elapsedMcs = elapsedNs / 1_000;
-                elapsedMcs -= Long.MIN_VALUE / 1_000; 
+                elapsedMcs -= Long.MIN_VALUE / 1_000;
                 elapsedMcs += Long.MAX_VALUE / 1_000;
                 return timeUnit.convert(elapsedMcs, TimeUnit.MICROSECONDS);
             } else {
@@ -196,6 +233,7 @@ public interface Chronometer {
 
     /**
      * Pause current thread on specified time
+     *
      * @param pauseMs Pause duration in milliseconds
      * @throws InterruptedException Thrown if the thread is interrupted
      */
@@ -203,6 +241,7 @@ public interface Chronometer {
 
     /**
      * Pause current thread on specified time
+     *
      * @param pause Pause duration
      * @param pauseUnit Time unit for time duration
      * @throws InterruptedException Thrown if the thread is interrupted

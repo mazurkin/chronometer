@@ -37,6 +37,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Constructs mock chronometer with current wall clock time state
+     *
      * @param mode Chronometer mode
      */
     public MockChronometer(Mode mode) {
@@ -46,6 +47,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Creates mock chronometer instance in <em>system</em> mode
+     *
      * @return Mock chronometer
      */
     public static MockChronometer createSystem() {
@@ -54,6 +56,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Creates mock chronometer instance in <em>ticking</em> mode
+     *
      * @return Mock chronometer
      */
     public static MockChronometer createTicking() {
@@ -62,6 +65,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Creates mock chronometer instance in <em>ticking</em> mode
+     *
      * @param epochTimeMs Epoch time in milliseconds
      * @param tickNs Ticks
      * @return Mock chronometer
@@ -72,6 +76,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Creates mock chronometer instance in <em>ticking</em> mode
+     *
      * @param moment Time
      * @param tickNs Ticks
      * @return Mock chronometer
@@ -82,6 +87,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Creates mock chronometer instance in <em>frozen</em> mode
+     *
      * @return Mock chronometer
      */
     public static MockChronometer createFrozen() {
@@ -90,6 +96,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Creates mock chronometer instance in <em>frozen</em> mode
+     *
      * @param epochTimeMs Epoch time in milliseconds
      * @param tickNs Ticks
      * @return Mock chronometer
@@ -100,6 +107,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Creates mock chronometer instance in <em>frozen</em> mode
+     *
      * @param moment Time
      * @param tickNs Ticks
      * @return Mock chronometer
@@ -110,6 +118,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Convert string representation of time to epoch millis
+     *
      * @param moment Time
      * @return Epoch time in milliseconds
      * @see MockChronometer#TIMESTAMP_FORMAT
@@ -138,6 +147,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Set the state from parameters
+     *
      * @param epochTimeMs Epoch time in milliseconds
      * @param adjustmentNs Nanoseconds adjustment for time
      * @param tickNs Ticks
@@ -155,6 +165,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Set the state from parameters
+     *
      * @param moment Time
      * @param tickNs Ticks
      */
@@ -171,6 +182,7 @@ public class MockChronometer implements Chronometer {
 
     /**
      * Returns mocked <em>tick</em> time value.
+     * 
      * @return Tick time in nanoseconds
      */
     @Override
@@ -525,6 +537,7 @@ public class MockChronometer implements Chronometer {
         private static State now() {
             long timeMs = SystemChronometer.INSTANCE.getTimeMs();
             long tickNs = SystemChronometer.INSTANCE.getTickNs();
+
             return State.of(timeMs, 0, tickNs);
         }
 
