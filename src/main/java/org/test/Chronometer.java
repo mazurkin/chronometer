@@ -1,8 +1,19 @@
 package org.test;
 
 import java.sql.Timestamp;
-import java.time.*;
-import java.util.*;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -18,15 +29,12 @@ import java.util.concurrent.TimeUnit;
  * <li><em>Wall clock</em> time that represents time since some <em>epoch</em> moment. Default source is {@link System#currentTimeMillis()}</li>
  * </ul>
  * 
- * <p>Support class {@link ChronometerUtils} has some advanced method and algorithms based on Chronometer abstraction.</p>
- *
  * <p>In tests use subclass {@link MockChronometer} that allows to control time flow.</p>
  *
  * <p>In production use subclass {@link SystemChronometer} that gets time from {@link java.lang.System} class</p>
  *
  * @see MockChronometer
  * @see SystemChronometer
- * @see ChronometerUtils
  * @see Clock
  */
 public interface Chronometer {
@@ -248,4 +256,32 @@ public interface Chronometer {
      */
     void sleep(long pause, TimeUnit pauseUnit) throws InterruptedException;
 
+    /**
+     * Pause current thread on specified time without throwing an interrupted exception
+     *
+     * @param pause Pause duration
+     * @param pauseUnit Time unit for time duration
+     */
+    default void sleepUninterruptibly(long pause, TimeUnit pauseUnit) {
+        boolean interrupted = false;
+
+        try {
+            long remainingNs = pauseUnit.toNanos(pause);
+            long deadlineNs = getTickNs() + remainingNs;
+
+            while (true) {
+                try {
+                    sleep(remainingNs, TimeUnit.NANOSECONDS);
+                    return;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    remainingNs = deadlineNs - getTickNs();
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 }

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Mock chronometer for test purposes. Allows to control both `tick` and `clock` sources.
  */
-public class MockChronometer implements Chronometer {
+public final class MockChronometer implements Chronometer {
 
     private static final long NS_IN_MS = TimeUnit.MILLISECONDS.toNanos(1);
 
@@ -131,7 +131,7 @@ public class MockChronometer implements Chronometer {
     /**
      * Set the state from system time sources
      */
-    public MockChronometer reset() {
+    public MockChronometer resetNow() {
         switch (mode) {
             case FROZEN:
             case TICKING:
@@ -476,12 +476,12 @@ public class MockChronometer implements Chronometer {
      */
     public void setMode(Mode mode) {
         this.mode = mode;
-        this.reset();
+        this.resetNow();
     }
 
     @Override
     public String toString() {
-        return mode.name() + ": " + getInstant();
+        return String.format("%s: %s / %d", mode.name(), getInstant(), getTickNs());
     }
 
     /**

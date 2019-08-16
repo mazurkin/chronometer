@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Default implementation bases on time values from {@link java.lang.System} class
  */
-public class SystemChronometer implements Chronometer {
+public final class SystemChronometer implements Chronometer {
 
     public static final SystemChronometer INSTANCE = new SystemChronometer();
 
@@ -32,16 +32,13 @@ public class SystemChronometer implements Chronometer {
 
     @Override
     public void sleep(long pause, TimeUnit pauseUnit) throws InterruptedException {
+        long pauseMs = pauseUnit.toMillis(pause);
+
         if (pauseUnit.compareTo(TimeUnit.MILLISECONDS) < 0) {
-            long pauseMs = pauseUnit.toMillis(pause);
+            long pauseNsPart = pauseUnit.toNanos(pause) - TimeUnit.MILLISECONDS.toNanos(pauseMs);
 
-            long pauseNsTotal = pauseUnit.toNanos(pause);
-            int pauseNsPart = (int) (pauseNsTotal - TimeUnit.MILLISECONDS.toNanos(pauseMs));
-
-            Thread.sleep(pauseMs, pauseNsPart);
+            Thread.sleep(pauseMs, (int) pauseNsPart);
         } else {
-            long pauseMs = pauseUnit.toMillis(pause);
-
             Thread.sleep(pauseMs);
         }
     }
@@ -51,7 +48,7 @@ public class SystemChronometer implements Chronometer {
      * @param chronometer Some provided chronometer
      * @return Provided or default chronometer
      */
-    public static SystemChronometer defaultOr(SystemChronometer chronometer) {
+    public static Chronometer or(Chronometer chronometer) {
         if (chronometer != null) {
             return chronometer;
         } else {
