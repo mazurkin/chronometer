@@ -25,10 +25,12 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>This abstraction has two sources:</p>
  * <ul>
- * <li><em>Tick</em> time that is provided by CPU or built-time hardware timers. Default source is {@link System#nanoTime()}</li>
- * <li><em>Wall clock</em> time that represents time since some <em>epoch</em> moment. Default source is {@link System#currentTimeMillis()}</li>
+ * <li><em>Tick</em> time that is provided by CPU or built-time hardware timers. Default source
+ * is {@link System#nanoTime()}</li>
+ * <li><em>Wall clock</em> time that represents time since some <em>epoch</em> moment. Default source
+ * is {@link System#currentTimeMillis()}</li>
  * </ul>
- * 
+ *
  * <p>In tests use subclass {@link MockChronometer} that allows to control time flow.</p>
  *
  * <p>In production use subclass {@link SystemChronometer} that gets time from {@link java.lang.System} class</p>
@@ -41,13 +43,18 @@ public interface Chronometer {
 
     long ALLOWED_TICK_JITTER_NS = 1_000_000;
 
+    long NS_IN_MCS = TimeUnit.MICROSECONDS.toNanos(1);
+
     /**
-     * Returns current <em>tick</em> time in nanoseconds. Doesn't depend on what <em>wall</em> clock time is it now. Doesn't depends
-     * on NTP shifts. Almost monotonic. Mostly used for timers and duration measurements.
+     * Returns current <em>tick</em> time in nanoseconds. Doesn't depend on what <em>wall</em> clock time is it now.
+     * Doesn't depends on NTP shifts. Almost monotonic. Mostly used for timers and duration measurements.
      *
      * @return Tick time in nanoseconds
      *
-     * @see <a href="http://stas-blogspot.blogspot.ru/2012/02/what-is-behind-systemnanotime.html">System.nanotTime() in details</a>
+     * @see <a href="http://stas-blogspot.blogspot.ru/2012/02/what-is-behind-systemnanotime.html">
+     *     System.nanotTime() in details</a>
+     * @see <a href="https://www.kapsi.de/blog/a-big-flaw-in-javas-nanotime">
+     *     Negative values</a>
      */
     long getTickNs();
 
@@ -55,9 +62,11 @@ public interface Chronometer {
      * Returns <em>wall clock</em> time in milliseconds since <em>epoch</em> (midnight, January 1, 1970 UTC)
      *
      * @return Milliseconds between the current time and <em>epoch</em> moment
-     * 
-     * @see <a href="http://infiniteundo.com/post/25326999628/falsehoods-programmers-believe-about-time">Facts about time #1</a>
-     * @see <a href="http://infiniteundo.com/post/25509354022/more-falsehoods-programmers-believe-about-time">Facts about time #2</a>
+     *
+     * @see <a href="http://infiniteundo.com/post/25326999628/falsehoods-programmers-believe-about-time">
+     *     Facts about time #1</a>
+     * @see <a href="http://infiniteundo.com/post/25509354022/more-falsehoods-programmers-believe-about-time">
+     *     Facts about time #2</a>
      */
     long getTimeMs();
 
@@ -210,8 +219,8 @@ public interface Chronometer {
     /**
      * Calculates difference between two timestamps in specified time unit
      *
-     * @param tickNs1 The first value returned by {@link Chronometer#getTickNs()} call at the start of measured operation
-     * @param tickNs2 The second value returned by {@link Chronometer#getTickNs()} call at the start of measured operation
+     * @param tickNs1 The first value returned by {@link Chronometer#getTickNs()} call at the start of an operation
+     * @param tickNs2 The second value returned by {@link Chronometer#getTickNs()} call at the end of an operation
      * @param timeUnit Time unit for result
      * @return Elapsed time in selected time unit
      *
@@ -229,9 +238,9 @@ public interface Chronometer {
             // large negative value - overflow
             if (timeUnit.compareTo(TimeUnit.NANOSECONDS) > 0) {
                 // handle long type overflow for higher time units
-                long elapsedMcs = elapsedNs / 1_000;
-                elapsedMcs -= Long.MIN_VALUE / 1_000;
-                elapsedMcs += Long.MAX_VALUE / 1_000;
+                long elapsedMcs = elapsedNs / NS_IN_MCS;
+                elapsedMcs -= Long.MIN_VALUE / NS_IN_MCS;
+                elapsedMcs += Long.MAX_VALUE / NS_IN_MCS;
                 return timeUnit.convert(elapsedMcs, TimeUnit.MICROSECONDS);
             } else {
                 return Long.MAX_VALUE;
